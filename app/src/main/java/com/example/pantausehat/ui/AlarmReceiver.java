@@ -52,6 +52,40 @@ public class AlarmReceiver extends BroadcastReceiver {
         }
     }
 
+//    @Override
+//    public void onReceive(Context context, Intent intent) {
+//        String medName   = intent.getStringExtra("medName");
+//        String medDosage = intent.getStringExtra("medDosage");
+//        int    medId     = intent.getIntExtra("medId", -1);
+//        String freq      = intent.getStringExtra("medFrequency");
+//
+//        createNotificationChannel(context);
+//        Intent tapIntent = new Intent(context, MainActivity.class);
+//        PendingIntent contentIntent = PendingIntent.getActivity(
+//                context, 0, tapIntent,
+//                PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE
+//        );
+//        NotificationCompat.Builder builder = new NotificationCompat.Builder(context, CHANNEL_ID)
+//                .setSmallIcon(R.drawable.ic_add)
+//                .setContentTitle("Time to take your medication")
+//                .setContentText(medName + " — " + medDosage)
+//                .setContentIntent(contentIntent)
+//                .setAutoCancel(true)
+//                .setPriority(NotificationCompat.PRIORITY_HIGH);
+//        NotificationManager nm = (NotificationManager)
+//                context.getSystemService(Context.NOTIFICATION_SERVICE);
+//        nm.notify((int) System.currentTimeMillis(), builder.build());
+//
+//        if (freq == null && medId != -1) {
+//            MedAlarmManager.scheduleTestRepeatAlarm(
+//                    context,
+//                    medId,
+//                    medName,
+//                    medDosage
+//            );
+//        }
+//    }
+
     private void createNotificationChannel(Context ctx) {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             CharSequence name        = "Medication Reminders";

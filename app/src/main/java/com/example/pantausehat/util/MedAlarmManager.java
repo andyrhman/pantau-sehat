@@ -52,7 +52,6 @@ public class MedAlarmManager {
         );
     }
 
-    // In MedAlarmManager.java alongside scheduleExactAlarm(...)
     public static void scheduleTestRepeatAlarm(Context ctx, int medId, String medName, String medDosage) {
         AlarmManager mgr = ctx.getSystemService(AlarmManager.class);
 

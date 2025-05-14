@@ -4,9 +4,11 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.CheckBox;
+import android.widget.ImageView;
 import android.widget.TextView;
 
 import androidx.annotation.NonNull;
+import androidx.appcompat.widget.PopupMenu;
 import androidx.recyclerview.widget.DiffUtil;
 import androidx.recyclerview.widget.ListAdapter;
 import androidx.recyclerview.widget.RecyclerView;
@@ -16,10 +18,17 @@ import com.example.pantausehat.data.Medication;
 
 import java.util.Objects;
 
-public class MedicationAdapter extends ListAdapter<Medication, MedicationAdapter.MedViewHolder> {
+public class MedicationAdapter
+        extends ListAdapter<Medication, MedicationAdapter.MedViewHolder> {
 
-    public MedicationAdapter() {
+    public interface OnItemActionListener {
+        void onDelete(Medication med);
+    }
+    private final OnItemActionListener actionListener;
+
+    public MedicationAdapter(OnItemActionListener listener) {
         super(DIFF_CALLBACK);
+        this.actionListener = listener;
     }
 
     private static final DiffUtil.ItemCallback<Medication> DIFF_CALLBACK =
@@ -48,30 +57,40 @@ public class MedicationAdapter extends ListAdapter<Medication, MedicationAdapter
     }
 
     @Override
-    public void onBindViewHolder(@NonNull MedViewHolder holder, int position) {
-        Medication med = getItem(position);
-        holder.tvName.setText(med.name != null ? med.name : "");
-        holder.tvDosage.setText(med.dosage != null ? med.dosage : "");
+    public void onBindViewHolder(@NonNull MedViewHolder h, int pos) {
+        Medication med = getItem(pos);
+        h.tvName.setText(med.name);
+        h.tvDosage.setText(med.dosage);
         // format time as hh:mm AM/PM
         int hour = med.hour;
         boolean pm = hour >= 12;
         int displayHour = (hour % 12 == 0) ? 12 : hour % 12;
         String minute = String.format("%02d", med.minute);
         String ampm = pm ? "PM" : "AM";
-        holder.tvTime.setText(displayHour + ":" + minute + " " + ampm);
-        holder.cbTaken.setChecked(false);  // you can later hook this to your log
+        h.tvTime.setText(displayHour + ":" + minute + " " + ampm);
+        h.ivMenu.setOnClickListener(v -> {
+            PopupMenu menu = new PopupMenu(v.getContext(), v);
+            menu.getMenu().add("Delete");
+            menu.setOnMenuItemClickListener(item -> {
+                if ("Delete".equals(item.getTitle())) {
+                    actionListener.onDelete(med);
+                    return true;
+                }
+                return false;
+            });
+            menu.show();
+        });
     }
 
     static class MedViewHolder extends RecyclerView.ViewHolder {
         TextView tvName, tvDosage, tvTime;
-        CheckBox cbTaken;
-
+        ImageView ivMenu;
         MedViewHolder(@NonNull View itemView) {
             super(itemView);
             tvName   = itemView.findViewById(R.id.tvMedName);
             tvDosage = itemView.findViewById(R.id.tvDosage);
             tvTime   = itemView.findViewById(R.id.tvTime);
-            cbTaken  = itemView.findViewById(R.id.cbTaken);
+            ivMenu   = itemView.findViewById(R.id.ivMenu);
         }
     }
 }

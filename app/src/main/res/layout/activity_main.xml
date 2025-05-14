@@ -10,20 +10,60 @@
     <com.google.android.material.appbar.MaterialToolbar
         android:id="@+id/topAppBar"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        app:title="Med Reminder"
-        android:theme="@style/ThemeOverlay.MaterialComponents.ActionBar"/>
+        android:layout_height="?attr/actionBarSize"
+        android:theme="@style/ThemeOverlay.MaterialComponents.ActionBar"
+        app:title="Med Reminder"/>
 
-    <!-- Make RecyclerView fill remaining space -->
+    <!-- Next-dose Card below the toolbar -->
+    <androidx.cardview.widget.CardView
+        android:id="@+id/cardNextDose"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_margin="16dp"
+        android:layout_marginTop="?attr/actionBarSize"
+        app:cardCornerRadius="8dp"
+        app:cardElevation="4dp">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:padding="12dp">
+
+            <TextView
+                android:id="@+id/tvNextMedName"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Next: —"
+                android:textAppearance="?attr/textAppearanceHeadline6"/>
+
+            <TextView
+                android:id="@+id/tvNextMedDosage"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text=""
+                android:textAppearance="?attr/textAppearanceBody2"/>
+
+            <TextView
+                android:id="@+id/tvCountdown"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="00:00:00"
+                android:textAppearance="?attr/textAppearanceSubtitle1"
+                android:layout_marginTop="4dp"/>
+        </LinearLayout>
+    </androidx.cardview.widget.CardView>
+
+    <!-- Medication list below card -->
     <androidx.recyclerview.widget.RecyclerView
         android:id="@+id/rvMedications"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:layout_margin="16dp"
-        android:paddingTop="?attr/actionBarSize"
+        android:layout_marginTop="?attr/actionBarSize"
+        android:paddingTop="128dp"
         app:layout_behavior="@string/appbar_scrolling_view_behavior"/>
 
-    <!-- Floating Button -->
+    <!-- Floating Add button -->
     <com.google.android.material.floatingactionbutton.FloatingActionButton
         android:id="@+id/fabAdd"
         android:layout_width="wrap_content"
