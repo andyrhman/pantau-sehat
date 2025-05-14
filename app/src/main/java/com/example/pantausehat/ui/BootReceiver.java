@@ -17,17 +17,14 @@ public class BootReceiver extends BroadcastReceiver {
         if (Intent.ACTION_BOOT_COMPLETED.equals(intent.getAction())) {
             Log.d("BootReceiver", "Device rebooted — rescheduling alarms");
 
-            // Create a new thread for database operations
+            // Do DB work off the main thread:
             new Thread(() -> {
                 List<Medication> meds = AppDatabase
                         .getInstance(ctx)
                         .medicationDao()
-                        .getAllSynchronously();
+                        .getAllSynchronously();      // your synchronous DAO method
 
-                // Schedule alarms for all frequency types
-                for (Medication med : meds) {
-                    MedAlarmManager.scheduleAlarm(ctx, med);
-                }
+                MedAlarmManager.scheduleAll(ctx, meds);
             }).start();
         }
     }

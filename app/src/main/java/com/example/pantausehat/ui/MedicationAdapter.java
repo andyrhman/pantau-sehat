@@ -14,6 +14,8 @@ import androidx.recyclerview.widget.RecyclerView;
 import com.example.pantausehat.R;
 import com.example.pantausehat.data.Medication;
 
+import java.util.Objects;
+
 public class MedicationAdapter extends ListAdapter<Medication, MedicationAdapter.MedViewHolder> {
 
     public MedicationAdapter() {
@@ -31,6 +33,7 @@ public class MedicationAdapter extends ListAdapter<Medication, MedicationAdapter
                 public boolean areContentsTheSame(@NonNull Medication oldItem, @NonNull Medication newItem) {
                     return oldItem.name.equals(newItem.name)
                             && oldItem.dosage.equals(newItem.dosage)
+                            && oldItem.frequency.equals(newItem.frequency)
                             && oldItem.hour == newItem.hour
                             && oldItem.minute == newItem.minute;
                 }
@@ -47,8 +50,8 @@ public class MedicationAdapter extends ListAdapter<Medication, MedicationAdapter
     @Override
     public void onBindViewHolder(@NonNull MedViewHolder holder, int position) {
         Medication med = getItem(position);
-        holder.tvName.setText(med.name);
-        holder.tvDosage.setText(med.dosage);
+        holder.tvName.setText(med.name != null ? med.name : "");
+        holder.tvDosage.setText(med.dosage != null ? med.dosage : "");
         // format time as hh:mm AM/PM
         int hour = med.hour;
         boolean pm = hour >= 12;

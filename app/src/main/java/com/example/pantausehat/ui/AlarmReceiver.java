@@ -13,7 +13,6 @@ import androidx.core.app.NotificationCompat;
 
 import com.example.pantausehat.R;
 import com.example.pantausehat.data.Medication;
-import com.example.pantausehat.ui.MainActivity;
 import com.example.pantausehat.util.MedAlarmManager;
 
 public class AlarmReceiver extends BroadcastReceiver {
@@ -21,55 +20,14 @@ public class AlarmReceiver extends BroadcastReceiver {
 
     @Override
     public void onReceive(Context context, Intent intent) {
-        // Extract all data from the intent
-        int medId = intent.getIntExtra("medId", -1);
-        String medName = intent.getStringExtra("medName");
+        String medName   = intent.getStringExtra("medName");
         String medDosage = intent.getStringExtra("medDosage");
-        int medHour = intent.getIntExtra("medHour", 0);
-        int medMinute = intent.getIntExtra("medMinute", 0);
-        String frequencyType = intent.getStringExtra("frequencyType");
-        int intervalHours = intent.getIntExtra("intervalHours", 0);
-        String days = intent.getStringExtra("days");
 
-        // Create notification
         createNotificationChannel(context);
-        showNotification(context, medName, medDosage);
 
-        // Only reschedule if not a one-time alarm
-        if (!"once".equals(frequencyType)) {
-            Medication med = new Medication();
-            med.id = medId;
-            med.name = medName;
-            med.dosage = medDosage;
-            med.hour = medHour;
-            med.minute = medMinute;
-            med.frequencyType = frequencyType;
-            med.intervalHours = intervalHours;
-            med.days = days;
-
-            MedAlarmManager.scheduleAlarm(context, med);
-        }
-
-        if ("hours".equals(frequencyType)) {
-            Medication med = new Medication();
-            med.id = medId;
-            med.name = medName;
-            med.dosage = medDosage;
-            med.frequencyType = frequencyType;
-            med.intervalHours = intervalHours;
-
-            // Schedule next alarm
-            MedAlarmManager.scheduleHourlyAlarm(context, med);
-            Log.d("AlarmReceiver", "Rescheduled hourly alarm for " + medName);
-        }
-    }
-
-    private void showNotification(Context context, String medName, String medDosage) {
         Intent tapIntent = new Intent(context, MainActivity.class);
         PendingIntent contentIntent = PendingIntent.getActivity(
-                context,
-                0,
-                tapIntent,
+                context, 0, tapIntent,
                 PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE
         );
 
@@ -81,20 +39,30 @@ public class AlarmReceiver extends BroadcastReceiver {
                 .setAutoCancel(true)
                 .setPriority(NotificationCompat.PRIORITY_HIGH);
 
-        NotificationManager nm = context.getSystemService(NotificationManager.class);
+        NotificationManager nm = (NotificationManager)
+                context.getSystemService(Context.NOTIFICATION_SERVICE);
         nm.notify((int) System.currentTimeMillis(), builder.build());
-        Log.d("AlarmReceiver", "Notification sent for " + medName);
+
+        Medication med = new Medication();
+        med.id        = intent.getIntExtra("medId", -1);
+
+        if (med.id != -1) {
+            Log.d("AlarmReceiver", "Rescheduling next exact alarm for medId=" + med.id);
+            MedAlarmManager.scheduleRepeatingAlarm(context, med);
+        }
     }
 
     private void createNotificationChannel(Context ctx) {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            NotificationChannel channel = new NotificationChannel(
-                    CHANNEL_ID,
-                    "Medication Reminders",
-                    NotificationManager.IMPORTANCE_HIGH
+            CharSequence name        = "Medication Reminders";
+            String description       = "Channel for medication alarms";
+            int importance           = NotificationManager.IMPORTANCE_HIGH;
+            NotificationChannel chan = new NotificationChannel(
+                    CHANNEL_ID, name, importance
             );
-            channel.setDescription("Channel for medication alarms");
-            ctx.getSystemService(NotificationManager.class).createNotificationChannel(channel);
+            chan.setDescription(description);
+            NotificationManager nm = ctx.getSystemService(NotificationManager.class);
+            nm.createNotificationChannel(chan);
         }
     }
 }
