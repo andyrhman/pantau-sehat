@@ -39,26 +39,26 @@ public class MainActivity extends AppCompatActivity {
             return insets;
         });
 
-        // RecyclerView + Adapter
+        // RecyclerView setup
         RecyclerView rv = findViewById(R.id.rvMedications);
         rv.setLayoutManager(new LinearLayoutManager(this));
         adapter = new MedicationAdapter();
         rv.setAdapter(adapter);
 
-        // FAB opens AddMedicationActivity
+        // FAB setup
         FloatingActionButton fab = findViewById(R.id.fabAdd);
         fab.setOnClickListener(view ->
                 startActivity(new Intent(MainActivity.this, AddMedicationActivity.class))
         );
 
-        // Observe Room data
+        // Observe medication data
         MedicationDao dao = AppDatabase.getInstance(this).medicationDao();
         dao.getAll().observe(this, meds -> {
-            Log.d("MainActivity", "Loaded " + meds.size() + " meds from DB");
+            Log.d("MainActivity", "Loaded " + meds.size() + " medications");
             adapter.submitList(meds);
 
+            // Schedule fresh alarms for all medications
             MedAlarmManager.scheduleAll(this, meds);
         });
-
     }
 }
