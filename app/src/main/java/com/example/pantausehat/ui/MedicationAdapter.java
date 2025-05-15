@@ -70,9 +70,9 @@ public class MedicationAdapter
         h.tvTime.setText(displayHour + ":" + minute + " " + ampm);
         h.ivMenu.setOnClickListener(v -> {
             PopupMenu menu = new PopupMenu(v.getContext(), v);
-            menu.getMenu().add("Delete");
+            menu.getMenu().add("Hapus");
             menu.setOnMenuItemClickListener(item -> {
-                if ("Delete".equals(item.getTitle())) {
+                if ("Hapus".equals(item.getTitle())) {
                     actionListener.onDelete(med);
                     return true;
                 }

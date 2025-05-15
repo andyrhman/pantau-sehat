@@ -1,5 +1,6 @@
 package com.example.pantausehat.ui;
 
+import android.app.AlarmManager;
 import android.app.NotificationChannel;
 import android.app.NotificationManager;
 import android.app.PendingIntent;
@@ -23,9 +24,45 @@ public class AlarmReceiver extends BroadcastReceiver {
         int    medId     = intent.getIntExtra("medId", -1);
         String medName   = intent.getStringExtra("medName");
         String medDosage = intent.getStringExtra("medDosage");
+        String medFrequency = intent.getStringExtra("medFrequency");
 
+        // Show notification
         createNotificationChannel(context);
+        showNotification(context, medName, medDosage, medId);
 
+        // Reschedule next alarm based on frequency
+        if (medId != -1 && medFrequency != null) {
+            try {
+                // Parse frequency (e.g., "Every 4 hours" → 4)
+                String[] parts = medFrequency.split(" ");
+                int hoursInterval = Integer.parseInt(parts[1]);
+                long intervalMs = hoursInterval * 60 * 60 * 1000;
+
+                // Schedule next alarm
+                long nextTriggerTime = System.currentTimeMillis() + intervalMs;
+                Intent nextIntent = new Intent(context, AlarmReceiver.class)
+                        .putExtras(intent.getExtras());
+
+                PendingIntent pendingIntent = PendingIntent.getBroadcast(
+                        context, medId, nextIntent,
+                        PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE
+                );
+
+                AlarmManager alarmManager = (AlarmManager) context.getSystemService(Context.ALARM_SERVICE);
+                if (alarmManager != null) {
+                    alarmManager.setExactAndAllowWhileIdle(
+                            AlarmManager.RTC_WAKEUP,
+                            nextTriggerTime,
+                            pendingIntent
+                    );
+                }
+            } catch (Exception e) {
+                Log.e("AlarmReceiver", "Error rescheduling alarm", e);
+            }
+        }
+    }
+
+    private void showNotification(Context context, String medName, String medDosage, int medId) {
         Intent tapIntent = new Intent(context, MainActivity.class);
         PendingIntent contentIntent = PendingIntent.getActivity(
                 context, medId, tapIntent,
@@ -40,18 +77,8 @@ public class AlarmReceiver extends BroadcastReceiver {
                 .setAutoCancel(true)
                 .setPriority(NotificationCompat.PRIORITY_HIGH);
 
-        NotificationManager nm = (NotificationManager)
-                context.getSystemService(Context.NOTIFICATION_SERVICE);
-
-        // Use medId as the notification ID (so posting again replaces the old one, not adds a duplicate)
+        NotificationManager nm = (NotificationManager) context.getSystemService(Context.NOTIFICATION_SERVICE);
         nm.notify(medId, builder.build());
-
-        // Reschedule next dose
-        if (medId != -1) {
-            MedAlarmManager.scheduleRepeatingAlarm(context,
-                    new Medication() {{ id = medId; name = medName; dosage = medDosage; }}
-            );
-        }
     }
 
 //    @Override

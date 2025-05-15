@@ -34,9 +34,7 @@ public class AddMedicationActivity extends AppCompatActivity {
         timePicker = findViewById(R.id.timePicker);
         btnSave = findViewById(R.id.btnSave);
 
-        // Use 24-hour mode or AM/PM as you prefer
         timePicker.setIs24HourView(false);
-
 
         btnSave.setOnClickListener(v -> {
             final Medication med = new Medication();
@@ -68,7 +66,7 @@ public class AddMedicationActivity extends AppCompatActivity {
                 }
             }).start();
 
-            finish();  // back to MainActivity
+            finish();
         });
     }
 }
