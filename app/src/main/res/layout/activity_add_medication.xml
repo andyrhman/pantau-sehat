@@ -13,7 +13,7 @@
         <com.google.android.material.textfield.TextInputLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:hint="Medication Name">
+            android:hint="Masukkan nama">
 
             <com.google.android.material.textfield.TextInputEditText
                 android:id="@+id/etMedName"
@@ -25,7 +25,7 @@
         <com.google.android.material.textfield.TextInputLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:hint="Dosage (e.g., 500mg)"
+            android:hint="Dosis (misal, 500mg)"
             android:layout_marginTop="12dp">
 
             <com.google.android.material.textfield.TextInputEditText
@@ -38,7 +38,7 @@
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="Frequency"
+            android:text="Frekuensi"
             android:layout_marginTop="12dp" />
 
         <Spinner
@@ -50,7 +50,7 @@
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="Time"
+            android:text="Pilih Waktu"
             android:layout_marginTop="12dp" />
 
         <TimePicker
@@ -63,7 +63,7 @@
             android:id="@+id/btnSave"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="Save"
+            android:text="Simpan"
             android:layout_marginTop="24dp" />
 
     </LinearLayout>

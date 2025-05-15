@@ -46,8 +46,13 @@ public class AddMedicationActivity extends AppCompatActivity {
             med.hour      = timePicker.getHour();
             med.minute    = timePicker.getMinute();
 
-            if (med.frequency == null || med.frequency.isEmpty()) {
-                Toast.makeText(this, "Please select a frequency", Toast.LENGTH_SHORT).show();
+            if (med.name == null || med.name.isEmpty()) {
+                Toast.makeText(this, "Masukkan nama (misal, Minum obat demam)", Toast.LENGTH_SHORT).show();
+                return;
+            }
+
+            if (med.dosage == null || med.dosage.isEmpty()) {
+                Toast.makeText(this, "Masukkan dosis yang tertulis di obat", Toast.LENGTH_SHORT).show();
                 return;
             }
 

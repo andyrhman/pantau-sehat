@@ -20,6 +20,7 @@ public class AlarmReceiver extends BroadcastReceiver {
 
     @Override
     public void onReceive(Context context, Intent intent) {
+        int    medId     = intent.getIntExtra("medId", -1);
         String medName   = intent.getStringExtra("medName");
         String medDosage = intent.getStringExtra("medDosage");
 
@@ -27,13 +28,13 @@ public class AlarmReceiver extends BroadcastReceiver {
 
         Intent tapIntent = new Intent(context, MainActivity.class);
         PendingIntent contentIntent = PendingIntent.getActivity(
-                context, 0, tapIntent,
+                context, medId, tapIntent,
                 PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE
         );
 
         NotificationCompat.Builder builder = new NotificationCompat.Builder(context, CHANNEL_ID)
-                .setSmallIcon(R.drawable.ic_add)
-                .setContentTitle("Time to take your medication")
+                .setSmallIcon(R.drawable.pill_24px)
+                .setContentTitle("Waktunya meminum obatmu 💊")
                 .setContentText(medName + " — " + medDosage)
                 .setContentIntent(contentIntent)
                 .setAutoCancel(true)
@@ -41,14 +42,15 @@ public class AlarmReceiver extends BroadcastReceiver {
 
         NotificationManager nm = (NotificationManager)
                 context.getSystemService(Context.NOTIFICATION_SERVICE);
-        nm.notify((int) System.currentTimeMillis(), builder.build());
 
-        Medication med = new Medication();
-        med.id        = intent.getIntExtra("medId", -1);
+        // Use medId as the notification ID (so posting again replaces the old one, not adds a duplicate)
+        nm.notify(medId, builder.build());
 
-        if (med.id != -1) {
-            Log.d("AlarmReceiver", "Rescheduling next exact alarm for medId=" + med.id);
-            MedAlarmManager.scheduleRepeatingAlarm(context, med);
+        // Reschedule next dose
+        if (medId != -1) {
+            MedAlarmManager.scheduleRepeatingAlarm(context,
+                    new Medication() {{ id = medId; name = medName; dosage = medDosage; }}
+            );
         }
     }
 
@@ -88,8 +90,8 @@ public class AlarmReceiver extends BroadcastReceiver {
 
     private void createNotificationChannel(Context ctx) {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            CharSequence name        = "Medication Reminders";
-            String description       = "Channel for medication alarms";
+            CharSequence name        = "Jadwal Pengobatan";
+            String description       = "Channel untuk alarm obat";
             int importance           = NotificationManager.IMPORTANCE_HIGH;
             NotificationChannel chan = new NotificationChannel(
                     CHANNEL_ID, name, importance

@@ -43,4 +43,5 @@ dependencies {
     implementation("androidx.room:room-runtime:2.5.1")
     annotationProcessor("androidx.room:room-compiler:2.5.1")
     implementation("androidx.room:room-ktx:2.5.1")
+    implementation ("androidx.core:core-google-shortcuts:1.1.0")
 }

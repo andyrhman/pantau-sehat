@@ -29,14 +29,23 @@ public class MedAlarmManager {
                 .putExtra("medHour", med.hour)
                 .putExtra("medMinute", med.minute);
 
+        // 1) Try to retrieve an existing PendingIntent
+        PendingIntent existing = PendingIntent.getBroadcast(
+                ctx, med.id, i,
+                PendingIntent.FLAG_NO_CREATE | PendingIntent.FLAG_IMMUTABLE
+        );
+        if (existing != null) {
+            mgr.cancel(existing);    // cancel it at the AlarmManager level
+            existing.cancel();       // cancel the PendingIntent itself
+        }
+
+        // 2) Re-create a fresh one
         PendingIntent pi = PendingIntent.getBroadcast(
-                ctx,
-                med.id,
-                i,
+                ctx, med.id, i,
                 PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE
         );
 
-        // compute next trigger time based on hour/minute
+        // compute next trigger time
         Calendar cal = Calendar.getInstance();
         cal.set(Calendar.HOUR_OF_DAY, med.hour);
         cal.set(Calendar.MINUTE, med.minute);

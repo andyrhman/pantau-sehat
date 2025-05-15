@@ -1,9 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string-array name="frequency_options">
-        <item>Every 2 hours</item>
-        <item>Every 4 hours</item>
-        <item>Every 6 hours</item>
-        <item>Every 8 hours</item>
+        <item>Setiap 2 jam</item>
+        <item>Setiap 4 jam</item>
+        <item>Setiap 6 jam</item>
+        <item>Setiap 8 jam</item>
     </string-array>
 </resources>

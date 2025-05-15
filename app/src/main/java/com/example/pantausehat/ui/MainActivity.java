@@ -5,6 +5,7 @@ import android.content.Intent;
 import android.icu.util.Calendar;
 import android.os.Bundle;
 import android.os.CountDownTimer;
+import android.text.TextUtils;
 import android.util.Log;
 import android.view.View;
 import android.widget.TextView;
@@ -48,6 +49,8 @@ public class MainActivity extends AppCompatActivity {
 
         // Next-dose UI
         TextView tvNextName = findViewById(R.id.tvNextMedName);
+        tvNextName.setMaxLines(1);
+        tvNextName.setEllipsize(TextUtils.TruncateAt.END);
         TextView tvNextDosage = findViewById(R.id.tvNextMedDosage);
         TextView tvCountdown = findViewById(R.id.tvCountdown);
 
@@ -62,7 +65,7 @@ public class MainActivity extends AppCompatActivity {
                         .delete(med);
 
                 runOnUiThread(() ->
-                        Toast.makeText(this, "Deleted “" + med.name + "”", Toast.LENGTH_SHORT).show()
+                        Toast.makeText(this, "Dihapus “" + med.name + "”", Toast.LENGTH_SHORT).show()
                 );
             }).start();
         });
@@ -91,7 +94,7 @@ public class MainActivity extends AppCompatActivity {
             // Find next scheduled dose and compute interval
             for (Medication m : meds) {
                 int hoursInterval = 24;
-                if (m.frequency != null && m.frequency.startsWith("Every")) {
+                if (m.frequency != null && m.frequency.startsWith("Setiap")) {
                     try {
                         hoursInterval = Integer.parseInt(m.frequency.split(" ")[1]);
                     } catch (Exception e) { }
@@ -122,12 +125,12 @@ public class MainActivity extends AppCompatActivity {
                 long millisUntil = nextTime - now;
                 startCountdown(millisUntil, tvCountdown);
             } else {
-                tvNextName.setText("No upcoming doses");
+                tvNextName.setText("Tidak ada jadwal");
                 tvNextDosage.setText("");
                 tvCountdown.setText("");
             }
 
-            MedAlarmManager.scheduleAll(this, meds);
+//            MedAlarmManager.scheduleAll(this, meds);
         });
     }
 
