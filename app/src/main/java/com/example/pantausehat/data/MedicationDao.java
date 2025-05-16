@@ -25,4 +25,7 @@ public interface MedicationDao {
 
     @Query("SELECT * FROM medications")
     List<Medication> getAllSynchronously();
+
+    @Query("SELECT * FROM medications WHERE id = :medId")
+    Medication getById(int medId);
 }

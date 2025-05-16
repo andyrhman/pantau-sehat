@@ -1,6 +1,8 @@
 package com.example.pantausehat.ui;
 
 import android.app.AlarmManager;
+import android.app.NotificationManager;
+import android.content.Context;
 import android.content.Intent;
 import android.icu.util.Calendar;
 import android.os.Bundle;
@@ -59,14 +61,22 @@ public class MainActivity extends AppCompatActivity {
         rv.setLayoutManager(new LinearLayoutManager(this));
         adapter = new MedicationAdapter(med -> {
             new Thread(() -> {
-
+                // Delete from DB
                 AppDatabase.getInstance(MainActivity.this)
                         .medicationDao()
                         .delete(med);
 
-                runOnUiThread(() ->
-                        Toast.makeText(this, "Dihapus “" + med.name + "”", Toast.LENGTH_SHORT).show()
-                );
+                // Inside the delete handler:
+                runOnUiThread(() -> {
+                    MedAlarmManager.cancelAlarm(MainActivity.this, med.id);
+
+                    // Cancel notification immediately
+                    NotificationManager nm = (NotificationManager)
+                            getSystemService(Context.NOTIFICATION_SERVICE);
+                    nm.cancel(med.id); // Directly cancel using medId
+
+                    Toast.makeText(this, "Dihapus “" + med.name + "”", Toast.LENGTH_SHORT).show();
+                });
             }).start();
         });
         rv.setAdapter(adapter);
@@ -130,7 +140,7 @@ public class MainActivity extends AppCompatActivity {
                 tvCountdown.setText("");
             }
 
-//            MedAlarmManager.scheduleAll(this, meds);
+            MedAlarmManager.scheduleAll(this, meds);
         });
     }
 

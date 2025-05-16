@@ -6,6 +6,8 @@ import android.content.Context;
 import android.content.Intent;
 import android.util.Log;
 
+import androidx.work.WorkManager;
+
 import com.example.pantausehat.data.Medication;
 import com.example.pantausehat.ui.AlarmReceiver;
 
@@ -14,10 +16,6 @@ import java.util.List;
 
 public class MedAlarmManager {
 
-    /**
-     * Schedule a repeating alarm based on the medication's frequency.
-     * Frequency strings like "Every N hours" will be parsed into intervals.
-     */
     public static void scheduleRepeatingAlarm(Context ctx, Medication med) {
         AlarmManager mgr = ctx.getSystemService(AlarmManager.class);
 
@@ -59,6 +57,20 @@ public class MedAlarmManager {
                 cal.getTimeInMillis(),
                 pi
         );
+    }
+
+    public static void cancelAlarm(Context ctx, int medId) {
+        // 1. Cancel AlarmManager alarm
+        AlarmManager mgr = ctx.getSystemService(AlarmManager.class);
+        Intent intent = new Intent(ctx, AlarmReceiver.class);
+        PendingIntent pi = PendingIntent.getBroadcast(
+                ctx, medId, intent,
+                PendingIntent.FLAG_NO_CREATE | PendingIntent.FLAG_IMMUTABLE
+        );
+        if (pi != null) {
+            mgr.cancel(pi);
+            pi.cancel();
+        }
     }
 
     public static void scheduleTestRepeatAlarm(Context ctx, int medId, String medName, String medDosage) {
