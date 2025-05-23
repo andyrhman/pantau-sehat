@@ -1,24 +1,31 @@
 package com.example.pantausehat.ui;
 
+import android.Manifest;
 import android.app.AlarmManager;
 import android.app.NotificationManager;
 import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
+import android.content.pm.PackageManager;
 import android.icu.util.Calendar;
+import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.CountDownTimer;
 import android.provider.Settings;
 import android.text.TextUtils;
-import android.util.Log;
 import android.view.View;
 import android.widget.ExpandableListView;
 import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.activity.EdgeToEdge;
+import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.appcompat.app.AppCompatDelegate;
+import androidx.core.app.ActivityCompat;
+import androidx.core.app.NotificationManagerCompat;
+import androidx.core.content.ContextCompat;
 import androidx.core.graphics.Insets;
 import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
@@ -44,7 +51,7 @@ public class MainActivity extends AppCompatActivity {
     private CountDownTimer countDownTimer;
     private static final long DAY_MS = AlarmManager.INTERVAL_DAY;
     private List<List<Medication>> childLists = Collections.emptyList();
-
+    private static final int REQ_NOTIFY = 1001;
     private long computeDelayToNext(List<List<Medication>> childLists) {
         long now = System.currentTimeMillis();
         long best = Long.MAX_VALUE;
@@ -65,6 +72,11 @@ public class MainActivity extends AppCompatActivity {
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+
+        checkAndRequestNotificationPermission();
+
+        AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_NO);
 
         AlarmManager alarmManager = (AlarmManager) getSystemService(Context.ALARM_SERVICE);
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S &&
@@ -73,7 +85,7 @@ public class MainActivity extends AppCompatActivity {
                     new Intent(Settings.ACTION_REQUEST_SCHEDULE_EXACT_ALARM)
             );
         }
-        super.onCreate(savedInstanceState);
+
         EdgeToEdge.enable(this);
         setContentView(R.layout.activity_main);
 
@@ -138,7 +150,7 @@ public class MainActivity extends AppCompatActivity {
                     groupTitles,
                     childLists,
                     med -> {
-                        // ketika tombol hapus ditekan
+                        // ketika tombol hapus ditekan.
                         new Thread(() -> {
                             AppDatabase.getInstance(MainActivity.this)
                                     .medicationDao()
@@ -255,11 +267,55 @@ public class MainActivity extends AppCompatActivity {
             @Override
             public void onFinish() {
                 tvCountdown.setText("0 jam 0 menit 0 detik");
-                // then re-compute and restart as before...
                 long nextDelay = computeDelayToNext(childLists);
                 startCountdown(nextDelay, tvCountdown);
             }
         }.start();
     }
 
+    private void checkAndRequestNotificationPermission() {
+        if (!NotificationManagerCompat.from(this).areNotificationsEnabled()) {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                if (ContextCompat.checkSelfPermission(this,
+                        Manifest.permission.POST_NOTIFICATIONS)
+                        != PackageManager.PERMISSION_GRANTED) {
+
+                    // ask the user
+                    ActivityCompat.requestPermissions(
+                            this,
+                            new String[]{ Manifest.permission.POST_NOTIFICATIONS },
+                            REQ_NOTIFY
+                    );
+                    return;
+                }
+            }
+            openNotificationSettings();
+        }
+    }
+
+    @Override
+    public void onRequestPermissionsResult(int requestCode,
+                                           @NonNull String[] permissions,
+                                           @NonNull int[] grantResults) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults);
+        if (requestCode == REQ_NOTIFY) {
+            if (grantResults.length == 0
+                    || grantResults[0] != PackageManager.PERMISSION_GRANTED
+                    || !NotificationManagerCompat.from(this).areNotificationsEnabled()) {
+                openNotificationSettings();
+            }
+        }
+    }
+
+    private void openNotificationSettings() {
+        Intent intent = new Intent();
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            intent.setAction(Settings.ACTION_APP_NOTIFICATION_SETTINGS);
+            intent.putExtra(Settings.EXTRA_APP_PACKAGE, getPackageName());
+        } else {
+            intent.setAction(Settings.ACTION_APPLICATION_DETAILS_SETTINGS);
+            intent.setData(Uri.fromParts("package", getPackageName(), null));
+        }
+        startActivity(intent);
+    }
 }
