@@ -4,105 +4,91 @@ import android.app.AlarmManager;
 import android.app.PendingIntent;
 import android.content.Context;
 import android.content.Intent;
+import android.os.Build;
 import android.util.Log;
 
+import androidx.annotation.NonNull;
+import androidx.work.OneTimeWorkRequest;
 import androidx.work.WorkManager;
 
 import com.example.pantausehat.data.Medication;
 import com.example.pantausehat.ui.AlarmReceiver;
+import com.example.pantausehat.ui.MedWorker;
 
+import java.text.DateFormat;
 import java.util.Calendar;
+import java.util.Date;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 
 public class MedAlarmManager {
+    public static void scheduleDailyAlarm(Context ctx, Medication med) {
+        AlarmManager am = ctx.getSystemService(AlarmManager.class);
 
-    public static void scheduleRepeatingAlarm(Context ctx, Medication med) {
-        AlarmManager mgr = ctx.getSystemService(AlarmManager.class);
-
-        Intent i = new Intent(ctx, AlarmReceiver.class)
+        // cancel any existing PI for this med.id
+        Intent i0 = new Intent(ctx, AlarmReceiver.class)
                 .putExtra("medId", med.id)
                 .putExtra("medName", med.name)
-                .putExtra("medDosage", med.dosage)
-                .putExtra("medFrequency", med.frequency)
-                .putExtra("medHour", med.hour)
-                .putExtra("medMinute", med.minute);
-
-        // 1) Try to retrieve an existing PendingIntent
-        PendingIntent existing = PendingIntent.getBroadcast(
-                ctx, med.id, i,
+                .putExtra("medDosage", med.dosage);
+        PendingIntent old = PendingIntent.getBroadcast(
+                ctx, med.id, i0,
                 PendingIntent.FLAG_NO_CREATE | PendingIntent.FLAG_IMMUTABLE
         );
-        if (existing != null) {
-            mgr.cancel(existing);    // cancel it at the AlarmManager level
-            existing.cancel();       // cancel the PendingIntent itself
+        if (old != null) {
+            am.cancel(old);
+            old.cancel();
         }
 
-        // 2) Re-create a fresh one
+        // build new PI
         PendingIntent pi = PendingIntent.getBroadcast(
-                ctx, med.id, i,
+                ctx, med.id, i0,
                 PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE
         );
 
-        // compute next trigger time
+        // compute next trigger at med.hour:med.minute (today or tomorrow)
         Calendar cal = Calendar.getInstance();
         cal.set(Calendar.HOUR_OF_DAY, med.hour);
         cal.set(Calendar.MINUTE, med.minute);
         cal.set(Calendar.SECOND, 0);
-        if (cal.before(Calendar.getInstance())) {
-            cal.add(Calendar.DATE, 1);
+        long trigger = cal.getTimeInMillis();
+        if (trigger <= System.currentTimeMillis()) {
+            trigger += AlarmManager.INTERVAL_DAY;
         }
 
-        mgr.setExactAndAllowWhileIdle(
+        am.setExactAndAllowWhileIdle(
                 AlarmManager.RTC_WAKEUP,
-                cal.getTimeInMillis(),
+                trigger,
                 pi
         );
     }
 
     public static void cancelAlarm(Context ctx, int medId) {
-        // 1. Cancel AlarmManager alarm
-        AlarmManager mgr = ctx.getSystemService(AlarmManager.class);
+        AlarmManager am = ctx.getSystemService(AlarmManager.class);
         Intent intent = new Intent(ctx, AlarmReceiver.class);
         PendingIntent pi = PendingIntent.getBroadcast(
                 ctx, medId, intent,
                 PendingIntent.FLAG_NO_CREATE | PendingIntent.FLAG_IMMUTABLE
         );
         if (pi != null) {
-            mgr.cancel(pi);
+            am.cancel(pi);
             pi.cancel();
         }
-    }
-
-    public static void scheduleTestRepeatAlarm(Context ctx, int medId, String medName, String medDosage) {
-        AlarmManager mgr = ctx.getSystemService(AlarmManager.class);
-
-        // Build an Intent with only the fields you need for notification
-        Intent i = new Intent(ctx, AlarmReceiver.class)
-                .putExtra("medId", medId)
-                .putExtra("medName", medName)
-                .putExtra("medDosage", medDosage);
-        // no need for frequency/hour/minute here
-
-        PendingIntent pi = PendingIntent.getBroadcast(
-                ctx, medId, i,
-                PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE
-        );
-
-        long triggerAtMs = System.currentTimeMillis() + 30_000L;  // 30 seconds
-
-        mgr.setExactAndAllowWhileIdle(
-                AlarmManager.RTC_WAKEUP,
-                triggerAtMs,
-                pi
-        );
-
-        Log.d("MedAlarmManager", "Scheduled test alarm in 30s for medId=" + medId);
     }
 
     /** Schedule all existing meds from the DB. Call this on app startup or boot. */
     public static void scheduleAll(Context ctx, List<Medication> meds) {
         for (Medication med : meds) {
-            scheduleRepeatingAlarm(ctx, med);
+            scheduleDailyAlarm(ctx, med);
+            scheduleWorkManagerBackup(ctx, med);
         }
+    }
+
+    private static void scheduleWorkManagerBackup(Context ctx, Medication med) {
+        OneTimeWorkRequest workRequest = new OneTimeWorkRequest.Builder(MedWorker.class)
+                .setInitialDelay(1, TimeUnit.HOURS)
+                .addTag("med_" + med.id)
+                .build();
+
+        WorkManager.getInstance(ctx).enqueue(workRequest);
     }
 }

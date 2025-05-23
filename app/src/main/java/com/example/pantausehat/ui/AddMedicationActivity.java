@@ -1,5 +1,6 @@
 package com.example.pantausehat.ui;
 
+import android.app.AlarmManager;
 import android.os.Bundle;
 import android.util.Log;
 import android.widget.Button;
@@ -15,9 +16,10 @@ import com.example.pantausehat.db.AppDatabase;
 import com.example.pantausehat.util.MedAlarmManager;
 import com.google.android.material.textfield.TextInputEditText;
 
+import java.util.Calendar;
+
 
 public class AddMedicationActivity extends AppCompatActivity {
-
     private TextInputEditText etMedName, etDosage;
     private Spinner spinnerFrequency;
     private TimePicker timePicker;
@@ -37,32 +39,60 @@ public class AddMedicationActivity extends AppCompatActivity {
         timePicker.setIs24HourView(false);
 
         btnSave.setOnClickListener(v -> {
-            final Medication med = new Medication();
-            med.name      = etMedName.getText().toString().trim();
-            med.dosage    = etDosage.getText().toString().trim();
-            med.frequency = spinnerFrequency.getSelectedItem().toString();
-            med.hour      = timePicker.getHour();
-            med.minute    = timePicker.getMinute();
+            String name     = etMedName.getText().toString().trim();
+            String dosage   = etDosage.getText().toString().trim();
+            int hourStart   = timePicker.getHour();
+            int minuteStart = timePicker.getMinute();
+            String freqText = spinnerFrequency.getSelectedItem().toString();
 
-            if (med.name == null || med.name.isEmpty()) {
+            if (name == null || name.isEmpty()) {
                 Toast.makeText(this, "Masukkan nama (misal, Minum obat demam)", Toast.LENGTH_SHORT).show();
                 return;
             }
 
-            if (med.dosage == null || med.dosage.isEmpty()) {
+            if (dosage == null || dosage.isEmpty()) {
                 Toast.makeText(this, "Masukkan dosis yang tertulis di obat", Toast.LENGTH_SHORT).show();
                 return;
             }
 
+            String[] parts      = freqText.toLowerCase().split("\\s+");     // ["setiap","4","jam"]
+            int intervalHours   = Integer.parseInt(parts[1]);
+            long intervalMs     = intervalHours * AlarmManager.INTERVAL_HOUR;
+            int slots           = (int)(AlarmManager.INTERVAL_DAY / intervalMs);
+
             new Thread(() -> {
-                long newId = AppDatabase
-                        .getInstance(AddMedicationActivity.this)
-                        .medicationDao()
-                        .insert(med);
-                if (newId > 0) {
-                    MedAlarmManager.scheduleRepeatingAlarm(this, med);
-                } else {
-                    Log.e("AddMedication", "Insert failed!");
+                AppDatabase db = AppDatabase.getInstance(AddMedicationActivity.this);
+
+                Calendar baseCal = Calendar.getInstance();
+                baseCal.set(Calendar.HOUR_OF_DAY, hourStart);
+                baseCal.set(Calendar.MINUTE, minuteStart);
+                baseCal.set(Calendar.SECOND, 0);
+                long baseTime = baseCal.getTimeInMillis();
+                long groupId = System.currentTimeMillis();
+
+                for (int slot = 0; slot < slots; slot++) {
+                    // compute this slot's hour/minute
+                    long slotTime = baseTime + slot * intervalMs;
+                    Calendar c = Calendar.getInstance();
+                    c.setTimeInMillis(slotTime);
+
+                    Medication m = new Medication();
+                    m.name   = name;
+                    m.dosage = dosage;
+                    m.hour   = c.get(Calendar.HOUR_OF_DAY);
+                    m.minute = c.get(Calendar.MINUTE);
+                    // Optional: store freqText if you still need it later
+                    m.frequency = freqText;
+                    m.groupId   = groupId;
+
+                    long newId = db.medicationDao().insert(m);
+                    if (newId > 0) {
+                        m.id = (int)newId;
+                        MedAlarmManager.scheduleDailyAlarm(
+                                AddMedicationActivity.this,
+                                m
+                        );
+                    }
                 }
             }).start();
 

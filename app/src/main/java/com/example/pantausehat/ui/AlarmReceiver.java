@@ -23,62 +23,14 @@ public class AlarmReceiver extends BroadcastReceiver {
     @Override
     public void onReceive(Context context, Intent intent) {
         int medId = intent.getIntExtra("medId", -1);
-        if (medId == -1) return;
+        if (medId < 0) return;
 
-        new Thread(() -> {
-            Medication med = AppDatabase.getInstance(context)
-                    .medicationDao()
-                    .getById(medId);
+        // You passed name & dosage in the intent when you scheduled:
+        String name   = intent.getStringExtra("medName");
+        String dosage = intent.getStringExtra("medDosage");
 
-            if (med == null) {
-                // Medication deleted - cancel everything
-                MedAlarmManager.cancelAlarm(context, medId);
-                NotificationManager nm = (NotificationManager)
-                        context.getSystemService(Context.NOTIFICATION_SERVICE);
-                nm.cancel(medId);
-                return;
-            }
-
-            // Show notification (no need for runOnUiThread)
-            createNotificationChannel(context);
-            showNotification(context, med.name, med.dosage, medId);
-
-            // Reschedule with latest data from DB
-            try {
-                String[] parts = med.frequency.split(" ");
-                int intervalValue = Integer.parseInt(parts[1]);
-                String unit = parts[2].toLowerCase();
-
-                long intervalMs = unit.contains("menit") ?
-                        intervalValue * 60 * 1000 :
-                        intervalValue * 60 * 60 * 1000;
-
-                long nextTriggerTime = System.currentTimeMillis() + intervalMs;
-
-                Intent nextIntent = new Intent(context, AlarmReceiver.class)
-                        .putExtra("medId", med.id)
-                        .putExtra("medName", med.name)
-                        .putExtra("medDosage", med.dosage)
-                        .putExtra("medFrequency", med.frequency);
-
-                PendingIntent pendingIntent = PendingIntent.getBroadcast(
-                        context, med.id, nextIntent,
-                        PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE
-                );
-
-                AlarmManager alarmManager = (AlarmManager)
-                        context.getSystemService(Context.ALARM_SERVICE);
-                if (alarmManager != null) {
-                    alarmManager.setExactAndAllowWhileIdle(
-                            AlarmManager.RTC_WAKEUP,
-                            nextTriggerTime,
-                            pendingIntent
-                    );
-                }
-            } catch (Exception e) {
-                Log.e("AlarmReceiver", "Reschedule error", e);
-            }
-        }).start();
+        createNotificationChannel(context);
+        showNotification(context, name, dosage, medId);
     }
 
     private void showNotification(Context context, String medName, String medDosage, int medId) {

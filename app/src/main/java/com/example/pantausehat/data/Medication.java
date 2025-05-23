@@ -9,6 +9,9 @@ public class Medication {
     @PrimaryKey(autoGenerate = true)
     public int id;
 
+    @ColumnInfo(name = "group_id")
+    public long groupId;
+
     @ColumnInfo(name = "name")
     public String name;
 

@@ -26,6 +26,9 @@ public interface MedicationDao {
     @Query("SELECT * FROM medications")
     List<Medication> getAllSynchronously();
 
-    @Query("SELECT * FROM medications WHERE id = :medId")
-    Medication getById(int medId);
+    @Query("SELECT * FROM medications WHERE group_id = :groupId")
+    List<Medication> getByGroup(long groupId);
+
+    @Query("DELETE FROM medications WHERE group_id = :groupId")
+    void deleteByGroup(long groupId);
 }
