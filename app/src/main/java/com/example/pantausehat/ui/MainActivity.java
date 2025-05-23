@@ -40,10 +40,28 @@ import java.util.Comparator;
 import java.util.Map.Entry;
 
 public class MainActivity extends AppCompatActivity {
-    private MedicationAdapter adapter;
     private ExpandableListView elvMeds;
     private CountDownTimer countDownTimer;
     private static final long DAY_MS = AlarmManager.INTERVAL_DAY;
+    private List<List<Medication>> childLists = Collections.emptyList();
+
+    private long computeDelayToNext(List<List<Medication>> childLists) {
+        long now = System.currentTimeMillis();
+        long best = Long.MAX_VALUE;
+
+        for (List<Medication> slots : childLists) {
+            for (Medication m : slots) {
+                Calendar cal = Calendar.getInstance();
+                cal.set(Calendar.HOUR_OF_DAY, m.hour);
+                cal.set(Calendar.MINUTE, m.minute);
+                cal.set(Calendar.SECOND, 0);
+                long t = cal.getTimeInMillis();
+                if (t <= now) t += DAY_MS;
+                if (t < best) best = t;
+            }
+        }
+        return (best == Long.MAX_VALUE) ? DAY_MS : (best - now);
+    }
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -62,7 +80,7 @@ public class MainActivity extends AppCompatActivity {
         checkExactAlarmPermission();
         requestAutoStartPermission();
         elvMeds = findViewById(R.id.elvMedications);
-        // Insets handling
+
         View root = findViewById(R.id.main);
         ViewCompat.setOnApplyWindowInsetsListener(root, (v, insets) -> {
             Insets sys = insets.getInsets(WindowInsetsCompat.Type.systemBars());
@@ -70,27 +88,23 @@ public class MainActivity extends AppCompatActivity {
             return insets;
         });
 
-        // Next-dose UI
         TextView tvNextName = findViewById(R.id.tvNextMedName);
         tvNextName.setMaxLines(1);
         tvNextName.setEllipsize(TextUtils.TruncateAt.END);
         TextView tvNextDosage = findViewById(R.id.tvNextMedDosage);
         TextView tvCountdown = findViewById(R.id.tvCountdown);
 
-        // FAB
         FloatingActionButton fab = findViewById(R.id.fabAdd);
         fab.setOnClickListener(v -> startActivity(new Intent(MainActivity.this, AddMedicationActivity.class)));
 
-        // Observe meds
         MedicationDao dao = AppDatabase.getInstance(this).medicationDao();
         dao.getAll().observe(this, meds -> {
-            // cancel any existing countdown
+
             if (countDownTimer != null) {
                 countDownTimer.cancel();
                 countDownTimer = null;
             }
 
-            // 1) Group by prescription ID (assumes you added a groupId field)
             Map<Long, List<Medication>> grouped = new LinkedHashMap<>();
             for (Medication m : meds) {
                 List<Medication> list = grouped.get(m.groupId);
@@ -101,17 +115,15 @@ public class MainActivity extends AppCompatActivity {
                 list.add(m);
             }
 
-            // 2) Build title + child lists
             List<Long> groupIds = new ArrayList<>(grouped.keySet());
             List<String> groupTitles = new ArrayList<>();
-            List<List<Medication>> childLists = new ArrayList<>();
+            this.childLists = childLists = new ArrayList<>();
 
             for (Map.Entry<Long, List<Medication>> e : grouped.entrySet()) {
                 List<Medication> slots = e.getValue();
-                // Sort by time
+
                 Collections.sort(slots, Comparator.comparingInt(x -> x.hour * 60 + x.minute));
 
-                // Use the first slot to compose the group header
                 Medication first = slots.get(0);
                 String title = first.name
                         + " — " + first.dosage
@@ -120,47 +132,41 @@ public class MainActivity extends AppCompatActivity {
                 childLists.add(slots);
             }
 
-            // 3) Set up the ExpandableListAdapter
             MyExpandableAdapter expAdapter = new MyExpandableAdapter(
                     this,
                     groupIds,
                     groupTitles,
                     childLists,
                     med -> {
-                        // this runs on the UI thread when user taps “Hapus”
+                        // ketika tombol hapus ditekan
                         new Thread(() -> {
-                            // 1) delete from DB
                             AppDatabase.getInstance(MainActivity.this)
                                     .medicationDao()
                                     .delete(med);
 
-                            // 2) cancel its alarm
                             MedAlarmManager.cancelAlarm(MainActivity.this, med.id);
 
-                            // 3) cancel any visible notification
                             NotificationManager nm =
                                     (NotificationManager) getSystemService(NOTIFICATION_SERVICE);
                             nm.cancel(med.id);
 
-                            // 4) refresh on UI thread
                             runOnUiThread(() -> {
                                 Toast.makeText(this,
                                         "Dihapus “" + med.name + "”",
                                         Toast.LENGTH_SHORT
                                 ).show();
-                                // re-trigger LiveData observer to rebuild the list
                             });
                         }).start();
                     },
-                    // group delete (bulk)—
+                    // hapus dengan grup
                     gid -> {
                         new Thread(() -> {
                             List<Medication> toDelete = dao.getByGroup(gid);
-                            // cancel alarms first
+
                             for (Medication m : toDelete) {
                                 MedAlarmManager.cancelAlarm(this, m.id);
                             }
-                            // then delete from DB
+
                             dao.deleteByGroup(gid);
                             runOnUiThread(() -> {
                                 Toast.makeText(this, "Semua jadwal dihapus", Toast.LENGTH_SHORT).show();
@@ -170,7 +176,6 @@ public class MainActivity extends AppCompatActivity {
             );
             elvMeds.setAdapter(expAdapter);
 
-            // 4) Find the next upcoming slot for your countdown
             long now = System.currentTimeMillis();
             Medication nextMed = null;
             long nextTime = Long.MAX_VALUE;
@@ -193,7 +198,7 @@ public class MainActivity extends AppCompatActivity {
             if (nextMed != null) {
                 tvNextName.setText("Next: " + nextMed.name);
                 tvNextDosage.setText(nextMed.dosage);
-                startCountdown(nextTime - now, tvCountdown);
+                startCountdown(computeDelayToNext(childLists), tvCountdown);
             } else {
                 tvNextName.setText("Tidak ada jadwal");
                 tvNextDosage.setText("");
@@ -222,7 +227,7 @@ public class MainActivity extends AppCompatActivity {
         } else if ("huawei".equalsIgnoreCase(manufacturer)) {
             intent.setComponent(new ComponentName("com.huawei.systemmanager", "com.huawei.systemmanager.startupmgr.ui.StartupNormalAppListActivity"));
         } else {
-            return; // For other manufacturers, skip or use a generic fallback
+            return;
         }
 
         try {
@@ -239,31 +244,22 @@ public class MainActivity extends AppCompatActivity {
                 long hrs  = millisUntilFinished / 3_600_000;
                 long mins = (millisUntilFinished % 3_600_000) / 60_000;
                 long secs = (millisUntilFinished % 60_000) / 1_000;
-                tvCountdown.setText(
-                        String.format("%02d:%02d:%02d", hrs, mins, secs)
-                );
+
+                // build verbose string
+                StringBuilder sb = new StringBuilder();
+                sb.append(hrs).append(" jam ").append(mins).append(" menit ").append(secs).append(" detik");
+
+                tvCountdown.setText(sb.toString());
             }
 
             @Override
             public void onFinish() {
-                tvCountdown.setText("00:00:00");
-                // restart a fresh 24-hour countdown
-                countDownTimer = new CountDownTimer(DAY_MS, 1_000) {
-                    @Override
-                    public void onTick(long millisUntilFinished) {
-                        long hrs  = millisUntilFinished / 3_600_000;
-                        long mins = (millisUntilFinished % 3_600_000) / 60_000;
-                        long secs = (millisUntilFinished % 60_000) / 1_000;
-                        tvCountdown.setText(
-                                String.format("%02d:%02d:%02d", hrs, mins, secs)
-                        );
-                    }
-                    @Override
-                    public void onFinish() {
-                        tvCountdown.setText("00:00:00");
-                    }
-                }.start();
+                tvCountdown.setText("0 jam 0 menit 0 detik");
+                // then re-compute and restart as before...
+                long nextDelay = computeDelayToNext(childLists);
+                startCountdown(nextDelay, tvCountdown);
             }
         }.start();
     }
+
 }

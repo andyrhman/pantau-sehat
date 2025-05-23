@@ -19,11 +19,11 @@ public class Medication {
     public String dosage;
 
     @ColumnInfo(name = "frequency")
-    public String frequency;    // e.g., "Twice a day"
+    public String frequency;
 
     @ColumnInfo(name = "hour")
-    public int hour;            // 0–23 from TimePicker
+    public int hour;
 
     @ColumnInfo(name = "minute")
-    public int minute;          // 0–59
+    public int minute;
 }

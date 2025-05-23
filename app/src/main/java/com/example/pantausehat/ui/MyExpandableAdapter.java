@@ -1,6 +1,7 @@
 package com.example.pantausehat.ui;
 
 import android.content.Context;
+import android.text.TextUtils;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -59,11 +60,22 @@ public class MyExpandableAdapter extends BaseExpandableListAdapter {
             convertView = LayoutInflater.from(ctx)
                     .inflate(R.layout.item_medication_group, parent, false);
         }
-        TextView tv       = convertView.findViewById(R.id.tvGroupTitle);
-        ImageView ivMenu  = convertView.findViewById(R.id.ivGroupMenu);
 
-        tv.setText(titles.get(groupPos));
-        // rotate your custom chevron
+        TextView tvName    = convertView.findViewById(R.id.tvGroupName);
+        TextView tvDosage  = convertView.findViewById(R.id.tvGroupDosage);
+        TextView tvFreq    = convertView.findViewById(R.id.tvGroupFreq);
+        ImageView ivMenu   = convertView.findViewById(R.id.ivGroupMenu);
+
+        List<Medication> slots = children.get(groupPos);
+        Medication first = slots.get(0);
+
+        tvName.setMaxLines(1);
+        tvName.setEllipsize(TextUtils.TruncateAt.END);
+        tvName.setText(first.name);
+
+        tvName.setText(first.name);
+        tvDosage.setText(first.dosage);
+        tvFreq.setText(first.frequency);
 
         ivMenu.setOnClickListener(v -> {
             PopupMenu menu = new PopupMenu(ctx, ivMenu);

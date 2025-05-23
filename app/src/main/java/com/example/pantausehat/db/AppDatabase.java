@@ -9,7 +9,6 @@ import androidx.room.RoomDatabase;
 import com.example.pantausehat.data.Medication;
 import com.example.pantausehat.data.MedicationDao;
 
-// AppDatabase.java
 @Database(entities = {Medication.class}, version = 1)
 public abstract class AppDatabase extends RoomDatabase {
     private static volatile AppDatabase INSTANCE;

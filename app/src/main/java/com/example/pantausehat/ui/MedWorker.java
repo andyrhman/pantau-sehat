@@ -18,7 +18,6 @@ public class MedWorker extends Worker {
     @NonNull
     @Override
     public Result doWork() {
-        // Use proper Context from Worker
         Context context = getApplicationContext();
 
         AppDatabase db = AppDatabase.getInstance(context);

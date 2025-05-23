@@ -2,7 +2,6 @@ package com.example.pantausehat.ui;
 
 import android.app.AlarmManager;
 import android.os.Bundle;
-import android.util.Log;
 import android.widget.Button;
 import android.widget.Spinner;
 import android.widget.TimePicker;
@@ -55,6 +54,15 @@ public class AddMedicationActivity extends AppCompatActivity {
                 return;
             }
 
+            if (name.length() > 100) {
+                Toast.makeText(this, "Nama terlalu panjang (maks. 100 karakter)", Toast.LENGTH_SHORT).show();
+                return;
+            }
+            if (dosage.length() > 100) {
+                Toast.makeText(this, "Dosis terlalu panjang (maks. 100 karakter)", Toast.LENGTH_SHORT).show();
+                return;
+            }
+
             String[] parts      = freqText.toLowerCase().split("\\s+");     // ["setiap","4","jam"]
             int intervalHours   = Integer.parseInt(parts[1]);
             long intervalMs     = intervalHours * AlarmManager.INTERVAL_HOUR;
@@ -71,7 +79,6 @@ public class AddMedicationActivity extends AppCompatActivity {
                 long groupId = System.currentTimeMillis();
 
                 for (int slot = 0; slot < slots; slot++) {
-                    // compute this slot's hour/minute
                     long slotTime = baseTime + slot * intervalMs;
                     Calendar c = Calendar.getInstance();
                     c.setTimeInMillis(slotTime);
@@ -81,7 +88,6 @@ public class AddMedicationActivity extends AppCompatActivity {
                     m.dosage = dosage;
                     m.hour   = c.get(Calendar.HOUR_OF_DAY);
                     m.minute = c.get(Calendar.MINUTE);
-                    // Optional: store freqText if you still need it later
                     m.frequency = freqText;
                     m.groupId   = groupId;
 

@@ -10,28 +10,58 @@
     app:cardElevation="4dp"
     app:cardUseCompatPadding="true">
 
-    <LinearLayout
-        android:orientation="vertical"
+    <androidx.constraintlayout.widget.ConstraintLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:padding="16dp">
 
+        <!-- 1) Medication name -->
         <TextView
-            android:id="@+id/tvGroupTitle"
-            android:layout_width="wrap_content"
+            android:id="@+id/tvGroupName"
+            android:layout_width="0dp"
             android:layout_height="wrap_content"
+            android:text="Minum paracetamol"
             android:textAppearance="?attr/textAppearanceSubtitle1"
             android:textStyle="bold"
-            android:textColor="?attr/colorOnSurface" />
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintTop_toTopOf="parent"/>
+
+        <!-- 2) Dosage + overflow menu in one row -->
+        <TextView
+            android:id="@+id/tvGroupDosage"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:text="500mg"
+            android:textAppearance="?attr/textAppearanceBody2"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@id/tvGroupName"
+            app:layout_constraintBottom_toTopOf="@id/tvGroupFreq"
+            app:layout_constraintEnd_toStartOf="@+id/ivGroupMenu"
+            android:layout_marginEnd="8dp"/>
 
         <ImageView
             android:id="@+id/ivGroupMenu"
             android:layout_width="24dp"
             android:layout_height="24dp"
-            android:layout_gravity="end"
-            android:contentDescription="Item Schedule"
-            app:srcCompat="@drawable/baseline_more_vert_24"/>
+            android:contentDescription="Menu jadwal"
+            app:srcCompat="@drawable/baseline_more_vert_24"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintTop_toTopOf="@id/tvGroupDosage"
+            app:layout_constraintBottom_toBottomOf="@id/tvGroupDosage"/>
 
+        <!-- 3) Frequency on its own row -->
+        <TextView
+            android:id="@+id/tvGroupFreq"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:text="Setiap 2 jam"
+            android:textAppearance="?attr/textAppearanceBody2"
+            android:textColor="?attr/colorOnSurfaceVariant"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintTop_toBottomOf="@id/tvGroupDosage"
+            app:layout_constraintBottom_toBottomOf="parent"/>
 
-    </LinearLayout>
+    </androidx.constraintlayout.widget.ConstraintLayout>
 </androidx.cardview.widget.CardView>

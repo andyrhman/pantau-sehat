@@ -24,12 +24,11 @@ public class BootReceiver extends BroadcastReceiver {
                 ctx.startActivity(i);
             }
 
-            // Do DB work off the main thread:
             new Thread(() -> {
                 List<Medication> meds = AppDatabase
                         .getInstance(ctx)
                         .medicationDao()
-                        .getAllSynchronously();      // your synchronous DAO method
+                        .getAllSynchronously();
 
                 MedAlarmManager.scheduleAll(ctx, meds);
             }).start();

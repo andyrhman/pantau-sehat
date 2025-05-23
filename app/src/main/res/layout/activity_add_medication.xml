@@ -18,6 +18,7 @@
             <com.google.android.material.textfield.TextInputEditText
                 android:id="@+id/etMedName"
                 android:layout_width="match_parent"
+                android:maxLength="38"
                 android:layout_height="wrap_content" />
 
         </com.google.android.material.textfield.TextInputLayout>
@@ -31,6 +32,7 @@
             <com.google.android.material.textfield.TextInputEditText
                 android:id="@+id/etDosage"
                 android:layout_width="match_parent"
+                android:maxLength="7"
                 android:layout_height="wrap_content" />
 
         </com.google.android.material.textfield.TextInputLayout>

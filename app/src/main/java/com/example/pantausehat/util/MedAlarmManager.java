@@ -4,10 +4,7 @@ import android.app.AlarmManager;
 import android.app.PendingIntent;
 import android.content.Context;
 import android.content.Intent;
-import android.os.Build;
-import android.util.Log;
 
-import androidx.annotation.NonNull;
 import androidx.work.OneTimeWorkRequest;
 import androidx.work.WorkManager;
 
@@ -15,9 +12,7 @@ import com.example.pantausehat.data.Medication;
 import com.example.pantausehat.ui.AlarmReceiver;
 import com.example.pantausehat.ui.MedWorker;
 
-import java.text.DateFormat;
 import java.util.Calendar;
-import java.util.Date;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 
@@ -25,7 +20,6 @@ public class MedAlarmManager {
     public static void scheduleDailyAlarm(Context ctx, Medication med) {
         AlarmManager am = ctx.getSystemService(AlarmManager.class);
 
-        // cancel any existing PI for this med.id
         Intent i0 = new Intent(ctx, AlarmReceiver.class)
                 .putExtra("medId", med.id)
                 .putExtra("medName", med.name)
@@ -39,13 +33,11 @@ public class MedAlarmManager {
             old.cancel();
         }
 
-        // build new PI
         PendingIntent pi = PendingIntent.getBroadcast(
                 ctx, med.id, i0,
                 PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE
         );
 
-        // compute next trigger at med.hour:med.minute (today or tomorrow)
         Calendar cal = Calendar.getInstance();
         cal.set(Calendar.HOUR_OF_DAY, med.hour);
         cal.set(Calendar.MINUTE, med.minute);
@@ -75,7 +67,7 @@ public class MedAlarmManager {
         }
     }
 
-    /** Schedule all existing meds from the DB. Call this on app startup or boot. */
+
     public static void scheduleAll(Context ctx, List<Medication> meds) {
         for (Medication med : meds) {
             scheduleDailyAlarm(ctx, med);
