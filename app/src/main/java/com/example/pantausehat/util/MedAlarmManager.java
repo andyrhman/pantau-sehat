@@ -21,9 +21,10 @@ public class MedAlarmManager {
         AlarmManager am = ctx.getSystemService(AlarmManager.class);
 
         Intent i0 = new Intent(ctx, AlarmReceiver.class)
-                .putExtra("medId", med.id)
-                .putExtra("medName", med.name)
-                .putExtra("medDosage", med.dosage);
+         .putExtra("medId",     med.id)
+         .putExtra("medName",   med.name)
+         .putExtra("medDosage", med.dosage)
+         .putExtra("groupId",   med.groupId);
         PendingIntent old = PendingIntent.getBroadcast(
                 ctx, med.id, i0,
                 PendingIntent.FLAG_NO_CREATE | PendingIntent.FLAG_IMMUTABLE
